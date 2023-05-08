@@ -144,7 +144,7 @@ def download_media(media, subtype, postdate, album = ''):
 	if (media["type"] == "photo" and not PHOTOS) or (media["type"] == "video" and not VIDEOS) or (media["type"] == "audio" and not AUDIO):
 		return
 
-	extension = source.split('?')[0].split('.')
+	extension = str(source).split('?')[0].split('.')
 	ext = '.' + extension[len(extension)-1]
 	if len(ext) < 3:
 		return
