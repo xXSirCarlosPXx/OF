@@ -138,13 +138,15 @@ def download_media(media, subtype, postdate, album = ''):
 		source = media["files"]["source"]["url"]
 	else:
 		source = media["source"]["source"]
+		if not source:
+			source = media["files"]["preview"]["url"]
 
 	if (media["type"] != "photo" and media["type"] != "video" and media["type"] != "audio") or not media['canView']:
 		return
 	if (media["type"] == "photo" and not PHOTOS) or (media["type"] == "video" and not VIDEOS) or (media["type"] == "audio" and not AUDIO):
 		return
 
-	extension = str(source).split('?')[0].split('.')
+	extension = source.split('?')[0].split('.')
 	ext = '.' + extension[len(extension)-1]
 	if len(ext) < 3:
 		return
