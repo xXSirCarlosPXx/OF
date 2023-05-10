@@ -139,7 +139,10 @@ def download_media(media, subtype, postdate, album = ''):
 	else:
 		source = media["source"]["source"]
 		if not source:
-			source = media["files"]["preview"]["url"]
+			if "preview" in media["files"]:
+				source = media["files"]["preview"]["url"]
+			elif "preview" in media:
+				source = media["preview"]
 
 	if (media["type"] != "photo" and media["type"] != "video" and media["type"] != "audio" and media["type"] != "gif") or not media['canView']:
 		return
