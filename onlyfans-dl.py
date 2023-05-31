@@ -176,10 +176,14 @@ def download_media(media, subtype, postdate, album = ''):
 		if r.status_code != 200:
 			print(r.url + ' :: ' + str(r.status_code))
 			return
-		with open(PROFILE + path, 'wb') as f:
+		# Writing to a temp file while downloading, so if we interrupt
+		# a file, we will not skip it but re-download it at next time.
+		with open(PROFILE + path + '.part', 'wb') as f:
 			r.raw.decode_content = True
 			shutil.copyfileobj(r.raw, f)
 		r.close()
+		# Downloading finished, remove temp file.
+		shutil.move(PROFILE + path + '.part', PROFILE + path)
 
 
 def get_content(MEDIATYPE, API_LOCATION):
