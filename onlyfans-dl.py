@@ -228,7 +228,7 @@ if __name__ == "__main__":
 		exit()
 	
 	#Get the rules for the signed headers dynamically, so we don't have to update the script every time they change
-	dynamic_rules = requests.get('https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json').json()
+	dynamic_rules = requests.get('https://raw.githubusercontent.com/DIGITALCRIMINALS/dynamic-rules/main/onlyfans.json').json()
 	PROFILE_LIST = sys.argv
 	PROFILE_LIST.pop(0)
 	if len(PROFILE_LIST) > 1 and PROFILE_LIST[-1].isnumeric():
