@@ -196,7 +196,7 @@ def download_media(media, subtype, postdate, album = ''):
 	if not os.path.isfile(PROFILE + path):
 		if DEBUG >= 2: print(path + ' ... downloading')
 		if MAX_AGE:
-			if DEBUG >= 2: print(PROFILE + path)
+			print(PROFILE + path)
 		global new_files
 		new_files += 1
 		try:
