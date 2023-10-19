@@ -19,6 +19,15 @@ USER_ID = ""
 USER_AGENT = ""
 X_BC = ""
 SESS_COOKIE = ""
+## to byPass some account
+ByPass = [
+	''
+]
+## 3 level of debug
+## 0 minimum output
+## 1 show activity with api call
+## 2 show activity and file
+DEBUG = 0
 
 #Options
 ALBUMS = True # Separate photos into subdirectories by post/album (Single photo posts are not put into subdirectories)
@@ -37,6 +46,7 @@ PURCHASED = True
 ######################
 # END CONFIGURATIONS #
 ######################
+
 
 API_URL = "https://onlyfans.com/api2/v2"
 new_files = 0
@@ -69,6 +79,15 @@ def create_signed_headers(link, queryParams):
 	return
 
 
+def showAge(myStr):
+	myStr = str(myStr)
+	tmp = myStr.split('.')
+	t = int(tmp[0])
+	dt_obj = datetime.fromtimestamp(t)
+	strOut = dt_obj.strftime("%Y-%m-%d")
+	return(strOut)
+
+
 def api_request(endpoint, apiType):
 	posts_limit = 50
 	getParams = { "limit": str(posts_limit), "order": "publish_date_asc"}
@@ -80,9 +99,14 @@ def api_request(endpoint, apiType):
 		getParams['afterPublishTime'] = str(MAX_AGE) + ".000000"
 		#Messages can only be limited by offset or last message ID. This requires its own separate function. TODO
 	create_signed_headers(endpoint, getParams)
+	if 'afterPublishTime' in getParams:
+		if DEBUG >= 1: print(API_URL + endpoint+" age "+str(showAge(getParams['afterPublishTime'])))
+	else:
+		if DEBUG >= 1: print(API_URL + endpoint)
 	status = requests.get(API_URL + endpoint, headers=API_HEADER, params=getParams)
 	if status.ok:
 		list_base = status.json()
+		if apiType != 'user-info': eachPost(apiType, list_base)
 	else:
 		return json.loads('{"error":{"message":"http '+str(status.status_code)+'"}}')
 
@@ -96,16 +120,23 @@ def api_request(endpoint, apiType):
 			getParams['afterPublishTime'] = list_base[len(list_base)-1]['postedAtPrecise']
 		while 1:
 			create_signed_headers(endpoint, getParams)
+			if 'afterPublishTime' in getParams:
+				if DEBUG >= 1: print(API_URL + endpoint+" age "+str(showAge(getParams['afterPublishTime'])))
+			else:
+				if DEBUG >= 1: print(API_URL + endpoint)
 			status = requests.get(API_URL + endpoint, headers=API_HEADER, params=getParams)
+			
 			if status.ok:
+				#print(status.text)
 				list_extend = status.json()
+				if apiType != 'user-info': eachPost(apiType, list_extend)
 			if apiType == 'messages':
 				list_base['list'].extend(list_extend['list'])
 				if list_extend['hasMore'] == False or len(list_extend['list']) < posts_limit or not status.ok:
 					break
 				getParams['id'] = str(list_base['list'][len(list_base['list'])-1]['id'])
 				continue
-			list_base.extend(list_extend) # Merge with previous posts
+			#list_base.extend(list_extend) # Merge with previous posts
 			if len(list_extend) < posts_limit:
 				break
 			if apiType == 'purchased' or apiType == 'subscriptions':
@@ -160,10 +191,10 @@ def download_media(media, subtype, postdate, album = ''):
 		path = "/" + media["type"] + "s/" + filename + ext
 	if USE_SUB_FOLDERS and subtype != "posts":
 		path = "/" + subtype + path
-
 	if not os.path.isdir(PROFILE + os.path.dirname(path)):
 		pathlib.Path(PROFILE + os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
 	if not os.path.isfile(PROFILE + path):
+		if DEBUG >= 2: print(path + ' ... downloading')
 		if MAX_AGE:
 			print(PROFILE + path)
 		global new_files
@@ -184,13 +215,11 @@ def download_media(media, subtype, postdate, album = ''):
 		r.close()
 		# Downloading finished, remove temp file.
 		shutil.move(PROFILE + path + '.part', PROFILE + path)
+	else:
+		if DEBUG >= 2: print(path + ' ... already exist')
 
 
-def get_content(MEDIATYPE, API_LOCATION):
-	posts = api_request(API_LOCATION,MEDIATYPE)
-	if "error" in posts:
-		print("\nERROR: " + posts["error"]["message"])
-		exit()
+def eachPost(MEDIATYPE, posts):
 	if MEDIATYPE == "messages":
 		posts = posts['list']
 	if len(posts) > 0:
@@ -218,8 +247,16 @@ def get_content(MEDIATYPE, API_LOCATION):
 		global new_files
 		print("Downloaded " + str(new_files) + " new " + MEDIATYPE)
 		new_files = 0
- 
 
+
+def get_content(MEDIATYPE, API_LOCATION):
+	posts = api_request(API_LOCATION,MEDIATYPE)
+	if "error" in posts:
+		print("\nERROR: " + posts["error"]["message"])
+		exit()
+	#eachPost(MEDIATYPE, posts)
+	
+ 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		print("\nUsage: " + sys.argv[0] + " <list of profiles / all> [optional: only get last <integer> days of posts]\n")
@@ -238,20 +275,23 @@ if __name__ == "__main__":
 	if PROFILE_LIST[0] == "all":
 		PROFILE_LIST = get_subscriptions()
 
-	for PROFILE in PROFILE_LIST:
-		PROFILE_ID = str(get_user_info(PROFILE)["id"])
-		if os.path.isdir(PROFILE):
-			print("\n" + PROFILE + " exists.\nDownloading new media, skipping pre-existing.")
-		else:
-			print("\nDownloading content to " + PROFILE)
 
-		if POSTS:
-			get_content("posts", "/users/" + PROFILE_ID + "/posts")
-		if ARCHIVED:
-			get_content("archived", "/users/" + PROFILE_ID + "/posts/archived")
-		if STORIES:
-			get_content("stories", "/users/" + PROFILE_ID + "/stories")
-		if MESSAGES:
-			get_content("messages", "/chats/" + PROFILE_ID + "/messages")
-		if PURCHASED:
-			get_content("purchased", "/posts/paid")
+
+	for PROFILE in PROFILE_LIST:
+		if PROFILE not in ByPass:
+			PROFILE_ID = str(get_user_info(PROFILE)["id"])
+			if os.path.isdir(PROFILE):
+				print("\n" + PROFILE + " exists.\nDownloading new media, skipping pre-existing.")
+			else:
+				print("\nDownloading content to " + PROFILE)
+
+			if POSTS:
+				get_content("posts", "/users/" + PROFILE_ID + "/posts")
+			if ARCHIVED:
+				get_content("archived", "/users/" + PROFILE_ID + "/posts/archived")
+			if STORIES:
+				get_content("stories", "/users/" + PROFILE_ID + "/stories")
+			if MESSAGES:
+				get_content("messages", "/chats/" + PROFILE_ID + "/messages")
+			if PURCHASED:
+				get_content("purchased", "/posts/paid")
