@@ -279,7 +279,7 @@ if __name__ == "__main__":
 		if PROFILE not in ByPass:
 			user_info = get_user_info(PROFILE)
 			if "id" in user_info:
-				PROFILE_ID = user_info["id"]
+				PROFILE_ID = str(user_info["id"])
 			else:
 				continue
 			if os.path.isdir(PROFILE):
