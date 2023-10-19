@@ -150,8 +150,7 @@ def get_user_info(profile):
 	# <profile> = "me" -> info about yourself
 	info = api_request("/users/" + profile, 'user-info')
 	if "error" in info:
-		print("\nUSER_ID auth failed\n"+info["error"]["message"]+"\n\nUpdate your browser user-agent variable, then sign back in to OF and update your session variables.\nhttps://ipchicken.com/\n")
-		exit()
+		print("\nFailed to get user: " + profile + "\n" + info["error"]["message"] + "\n")
 	return info
 
 
@@ -249,10 +248,10 @@ def eachPost(MEDIATYPE, posts):
 
 
 def get_content(MEDIATYPE, API_LOCATION):
-	posts = api_request(API_LOCATION,MEDIATYPE)
+	posts = api_request(API_LOCATION, MEDIATYPE)
 	if "error" in posts:
-		print("\nERROR: " + posts["error"]["message"])
-		exit()
+		print("\nERROR: " + API_LOCATION + " :: " + posts["error"]["message"])
+		#exit()
 	#eachPost(MEDIATYPE, posts)
 	
  
@@ -278,7 +277,11 @@ if __name__ == "__main__":
 
 	for PROFILE in PROFILE_LIST:
 		if PROFILE not in ByPass:
-			PROFILE_ID = str(get_user_info(PROFILE)["id"])
+			user_info = get_user_info(PROFILE)
+			if "id" in user_info:
+				PROFILE_ID = user_info["id"]
+			else:
+				continue
 			if os.path.isdir(PROFILE):
 				print("\n" + PROFILE + " exists.\nDownloading new media, skipping pre-existing.")
 			else:
