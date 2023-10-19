@@ -253,8 +253,8 @@ def get_content(MEDIATYPE, API_LOCATION):
 		print("\nERROR: " + API_LOCATION + " :: " + posts["error"]["message"])
 		#exit()
 	#eachPost(MEDIATYPE, posts)
-	
- 
+
+
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		print("\nUsage: " + sys.argv[0] + " <list of profiles / all> [optional: only get last <integer> days of posts]\n")
@@ -272,8 +272,6 @@ if __name__ == "__main__":
 
 	if PROFILE_LIST[0] == "all":
 		PROFILE_LIST = get_subscriptions()
-
-
 
 	for PROFILE in PROFILE_LIST:
 		if PROFILE not in ByPass:
@@ -297,3 +295,4 @@ if __name__ == "__main__":
 				get_content("messages", "/chats/" + PROFILE_ID + "/messages")
 			if PURCHASED:
 				get_content("purchased", "/posts/paid")
+
