@@ -19,15 +19,17 @@ USER_ID = ""
 USER_AGENT = ""
 X_BC = ""
 SESS_COOKIE = ""
-## to byPass some account
+
+#0 = do not print file names or api calls
+#1 = print api calls, but not file names
+#2 = print filenames only when time range is restricted (max age is set)
+#3 = always print filenames
+#4 = print skipped files that already exist
+VERBOSITY = 3
+#List of accounts to skip
 ByPass = [
 	''
 ]
-## 3 level of debug
-## 0 minimum output
-## 1 show activity with api call
-## 2 show activity and file
-DEBUG = 0
 
 #Options
 ALBUMS = True # Separate photos into subdirectories by post/album (Single photo posts are not put into subdirectories)
@@ -61,6 +63,7 @@ API_HEADER = {
 	"Cookie": "auh_id=" + USER_ID + "; sess=" + SESS_COOKIE
 }
 
+
 def create_signed_headers(link, queryParams):
 	global API_HEADER
 	path = "/api2/v2" + link
@@ -90,6 +93,7 @@ def showAge(myStr):
 
 def api_request(endpoint, apiType):
 	posts_limit = 50
+	age = ''
 	getParams = { "limit": str(posts_limit), "order": "publish_date_asc"}
 	if apiType == 'messages':
 		getParams['order'] = "desc"
@@ -97,12 +101,11 @@ def api_request(endpoint, apiType):
 		getParams['type'] = 'active'
 	if MAX_AGE and apiType != 'messages' and apiType != 'purchased' and apiType != 'subscriptions': #Cannot be limited by age
 		getParams['afterPublishTime'] = str(MAX_AGE) + ".000000"
+		age = " age " + str(showAge(getParams['afterPublishTime']))
 		#Messages can only be limited by offset or last message ID. This requires its own separate function. TODO
 	create_signed_headers(endpoint, getParams)
-	if 'afterPublishTime' in getParams:
-		if DEBUG >= 1: print(API_URL + endpoint+" age "+str(showAge(getParams['afterPublishTime'])))
-	else:
-		if DEBUG >= 1: print(API_URL + endpoint)
+	if VERBOSITY > 0: print(API_URL + endpoint + age)
+
 	status = requests.get(API_URL + endpoint, headers=API_HEADER, params=getParams)
 	if status.ok:
 		list_base = status.json()
@@ -120,10 +123,7 @@ def api_request(endpoint, apiType):
 			getParams['afterPublishTime'] = list_base[len(list_base)-1]['postedAtPrecise']
 		while 1:
 			create_signed_headers(endpoint, getParams)
-			if 'afterPublishTime' in getParams:
-				if DEBUG >= 1: print(API_URL + endpoint+" age "+str(showAge(getParams['afterPublishTime'])))
-			else:
-				if DEBUG >= 1: print(API_URL + endpoint)
+			if VERBOSITY > 0: print(API_URL + endpoint + age)
 			status = requests.get(API_URL + endpoint, headers=API_HEADER, params=getParams)
 			
 			if status.ok:
@@ -194,8 +194,7 @@ def download_media(media, subtype, postdate, album = ''):
 	if not os.path.isdir(PROFILE + os.path.dirname(path)):
 		pathlib.Path(PROFILE + os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
 	if not os.path.isfile(PROFILE + path):
-		if DEBUG >= 2: print(path + ' ... downloading')
-		if MAX_AGE:
+		if VERBOSITY >= 3 or (MAX_AGE and VERBOSITY >= 2):
 			print(PROFILE + path)
 		global new_files
 		new_files += 1
@@ -216,7 +215,7 @@ def download_media(media, subtype, postdate, album = ''):
 		# Downloading finished, remove temp file.
 		shutil.move(PROFILE + path + '.part', PROFILE + path)
 	else:
-		if DEBUG >= 2: print(path + ' ... already exist')
+		if VERBOSITY >= 4: print(path + ' ... already exists')
 
 
 def eachPost(MEDIATYPE, posts):
