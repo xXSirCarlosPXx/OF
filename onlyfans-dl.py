@@ -26,16 +26,17 @@ SESS_COOKIE = ""
 #3 = print api calls
 #4 = print skipped files that already exist
 VERBOSITY = 2
+#Download Directory. Uses CWD if null
+DL_DIR = ''
 #List of accounts to skip
-ByPass = [
-	''
-]
+ByPass = ['']
 
-#Options
-ALBUMS = True # Separate photos into subdirectories by post/album (Single photo posts are not put into subdirectories)
-USE_SUB_FOLDERS = True # use content type subfolders (messgaes/archived/stories/purchased), or download everything to /profile/photos and /profile/videos
+#Separate photos into subdirectories by post/album (Single photo posts are not put into subdirectories)
+ALBUMS = True
+#Use content type subfolders (messgaes/archived/stories/purchased), or download everything to /profile/photos and /profile/videos
+USE_SUB_FOLDERS = True
 
-# content types to download
+#Content types to download
 VIDEOS = True
 PHOTOS = True
 AUDIO = True
@@ -253,6 +254,10 @@ if __name__ == "__main__":
 		print("Update Browser User Agent (Every time it updates): https://ipchicken.com/\n")
 		exit()
 	
+	if DL_DIR:
+		try: os.chdir(DL_DIR)
+		except: print('Unable to use DIR: ' + DL_DIR)
+	print("CWD = " + os.getcwd())
 	#Get the rules for the signed headers dynamically, so we don't have to update the script every time they change
 	dynamic_rules = requests.get('https://raw.githubusercontent.com/DIGITALCRIMINALS/dynamic-rules/main/onlyfans.json').json()
 	PROFILE_LIST = sys.argv
