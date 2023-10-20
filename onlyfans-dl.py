@@ -21,11 +21,11 @@ X_BC = ""
 SESS_COOKIE = ""
 
 #0 = do not print file names or api calls
-#1 = print api calls, but not file names
-#2 = print filenames only when time range is restricted (max age is set)
-#3 = always print filenames
+#1 = print filenames only when max_age is set
+#2 = always print filenames
+#3 = print api calls
 #4 = print skipped files that already exist
-VERBOSITY = 3
+VERBOSITY = 2
 #List of accounts to skip
 ByPass = [
 	''
@@ -104,12 +104,11 @@ def api_request(endpoint, apiType):
 		age = " age " + str(showAge(getParams['afterPublishTime']))
 		#Messages can only be limited by offset or last message ID. This requires its own separate function. TODO
 	create_signed_headers(endpoint, getParams)
-	if VERBOSITY > 0: print(API_URL + endpoint + age)
+	if VERBOSITY >= 3: print(API_URL + endpoint + age)
 
 	status = requests.get(API_URL + endpoint, headers=API_HEADER, params=getParams)
 	if status.ok:
 		list_base = status.json()
-		if apiType != 'user-info': eachPost(apiType, list_base)
 	else:
 		return json.loads('{"error":{"message":"http '+str(status.status_code)+'"}}')
 
@@ -123,20 +122,17 @@ def api_request(endpoint, apiType):
 			getParams['afterPublishTime'] = list_base[len(list_base)-1]['postedAtPrecise']
 		while 1:
 			create_signed_headers(endpoint, getParams)
-			if VERBOSITY > 0: print(API_URL + endpoint + age)
+			if VERBOSITY >= 3: print(API_URL + endpoint + age)
 			status = requests.get(API_URL + endpoint, headers=API_HEADER, params=getParams)
-			
 			if status.ok:
-				#print(status.text)
 				list_extend = status.json()
-				if apiType != 'user-info': eachPost(apiType, list_extend)
 			if apiType == 'messages':
 				list_base['list'].extend(list_extend['list'])
 				if list_extend['hasMore'] == False or len(list_extend['list']) < posts_limit or not status.ok:
 					break
 				getParams['id'] = str(list_base['list'][len(list_base['list'])-1]['id'])
 				continue
-			#list_base.extend(list_extend) # Merge with previous posts
+			list_base.extend(list_extend) # Merge with previous posts
 			if len(list_extend) < posts_limit:
 				break
 			if apiType == 'purchased' or apiType == 'subscriptions':
@@ -193,7 +189,7 @@ def download_media(media, subtype, postdate, album = ''):
 	if not os.path.isdir(PROFILE + os.path.dirname(path)):
 		pathlib.Path(PROFILE + os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
 	if not os.path.isfile(PROFILE + path):
-		if VERBOSITY >= 3 or (MAX_AGE and VERBOSITY >= 2):
+		if VERBOSITY >= 2 or (MAX_AGE and VERBOSITY >= 1):
 			print(PROFILE + path)
 		global new_files
 		new_files += 1
@@ -217,7 +213,10 @@ def download_media(media, subtype, postdate, album = ''):
 		if VERBOSITY >= 4: print(path + ' ... already exists')
 
 
-def eachPost(MEDIATYPE, posts):
+def get_content(MEDIATYPE, API_LOCATION):
+	posts = api_request(API_LOCATION, MEDIATYPE)
+	if "error" in posts:
+		print("\nERROR: " + API_LOCATION + " :: " + posts["error"]["message"])
 	if MEDIATYPE == "messages":
 		posts = posts['list']
 	if len(posts) > 0:
@@ -245,14 +244,6 @@ def eachPost(MEDIATYPE, posts):
 		global new_files
 		print("Downloaded " + str(new_files) + " new " + MEDIATYPE)
 		new_files = 0
-
-
-def get_content(MEDIATYPE, API_LOCATION):
-	posts = api_request(API_LOCATION, MEDIATYPE)
-	if "error" in posts:
-		print("\nERROR: " + API_LOCATION + " :: " + posts["error"]["message"])
-		#exit()
-	#eachPost(MEDIATYPE, posts)
 
 
 if __name__ == "__main__":
