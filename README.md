@@ -1,5 +1,5 @@
 # OnlyFans Profile Downloader / Archiver v2
-This tool downloads all photos/videos from an OnlyFans profile, creating a local archive.\
+This tool downloads all photos/videos from OnlyFans profiles, creating a local archive.\
 You must be subscribed to the profile to download their content.
 
 onlyfans-dl will create a directory named after the profile in the current working directory.\
@@ -17,20 +17,15 @@ Requires Python3 and 'requests': `python -m pip install requests`
 * Download everything, or only the last &lt;integer&gt; days of content
 * Specify multiple profiles at once or use "all" keyword to get subscriptions dynamically
 
-#### ToDo
-A post with a single photo and video shouldn't be considered an album.\
-Allow messages to be limited by age through a separate mechanism/function.
-
 ## Usage
 First make sure to set your session variables in the script and configure your options.
 
-`./onlyfans-dl.py <profiles / all> [optional: max age (integer)]`
+`./onlyfans-dl.py <profiles / all> <max age (optional)>`
 * `<profiles>` - the usernames of profiles to download. Use "all" to get all currently subscribed profiles
-* `[max age]` - Optional: Only get posts from the last &lt;integer&gt; days (Messages/Paid not affected)
+* `<max age>` - Optional: Only get posts from the last &lt;integer&gt; days (Messages/Paid not affected)
+  * `max age = 0` - sets max age to latest date from the filenames for each profile individually
 
 ## Session Variables
-Requests to the API now need to be signed. This is an obfuscation technique from the developers to discourage scraping. Thanks for the most recent patch goes to [DIGITALCRIMINAL](https://github.com/DIGITALCRIMINAL/OnlyFans).
-
 You need your browser's __user-agent__, onlyfans **sess**ion cookie, __x-bc__ HTTP header, and **user-id**. Here's how to get them
 
 - Get your browser's user-agent here [ipchicken](https://ipchicken.com/) __You must update this every time your browser updates__
@@ -47,5 +42,8 @@ You need your browser's __user-agent__, onlyfans **sess**ion cookie, __x-bc__ HT
 
 There are variables for each of these values at the top of the script. Make sure to update them every time you login or your browser updates.
 
-## Contributing
-PRs are welcome; be sure to take some time to familiarize yourself with OnlyFans' API if you would like to extend/modify the functionality of this script.
+#### ToDo
+A post with a single photo and video shouldn't be considered an album.\
+Allow messages to be limited by age through a separate mechanism/function.
+
+

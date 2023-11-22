@@ -54,6 +54,7 @@ PURCHASED = True
 API_URL = "https://onlyfans.com/api2/v2"
 new_files = 0
 MAX_AGE = 0
+LATEST = 0
 API_HEADER = {
 	"Accept": "application/json, text/plain, */*",
 	"Accept-Encoding": "gzip, deflate",
@@ -90,6 +91,15 @@ def showAge(myStr):
 	dt_obj = datetime.fromtimestamp(t)
 	strOut = dt_obj.strftime("%Y-%m-%d")
 	return(strOut)
+
+
+def latest(profile):
+	latest = "0";
+	for dirpath, dirs, files in os.walk(profile):
+		for f in files:
+			if f.startswith('20'):
+				latest = f if f > latest else latest
+	return latest[:10]
 
 
 def api_request(endpoint, apiType):
@@ -249,7 +259,9 @@ def get_content(MEDIATYPE, API_LOCATION):
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
-		print("\nUsage: " + sys.argv[0] + " <list of profiles / all> [optional: only get last <integer> days of posts]\n")
+		print("\nUsage: " + sys.argv[0] + " <list of profiles / all> <max age (optional)>\n")
+		print("max age must be an integer. number of days back from today.\n")
+		print("if max age = 0, the script will find the latest date amongst the files for each profile independantly.\n")
 		print("Make sure to update the session variables at the top of this script (See readme).\n")
 		print("Update Browser User Agent (Every time it updates): https://ipchicken.com/\n")
 		exit()
@@ -262,6 +274,9 @@ if __name__ == "__main__":
 	dynamic_rules = requests.get('https://raw.githubusercontent.com/DIGITALCRIMINALS/dynamic-rules/main/onlyfans.json').json()
 	PROFILE_LIST = sys.argv
 	PROFILE_LIST.pop(0)
+	if PROFILE_LIST[-1] == "0":
+		LATEST = 1
+		PROFILE_LIST.pop(-1)
 	if len(PROFILE_LIST) > 1 and PROFILE_LIST[-1].isnumeric():
 		MAX_AGE = int((datetime.today() - timedelta(int(PROFILE_LIST.pop(-1)))).timestamp())
 		print("\nGetting posts newer than " + str(datetime.utcfromtimestamp(int(MAX_AGE))) + " UTC")
@@ -270,25 +285,36 @@ if __name__ == "__main__":
 		PROFILE_LIST = get_subscriptions()
 
 	for PROFILE in PROFILE_LIST:
-		if PROFILE not in ByPass:
-			user_info = get_user_info(PROFILE)
-			if "id" in user_info:
-				PROFILE_ID = str(user_info["id"])
-			else:
-				continue
-			if os.path.isdir(PROFILE):
-				print("\n" + PROFILE + " exists.\nDownloading new media, skipping pre-existing.")
-			else:
-				print("\nDownloading content to " + PROFILE)
+		if PROFILE in ByPass:
+			if VERBOSITY > 0:
+				print("skipping " + PROFILE)
+			continue
+		user_info = get_user_info(PROFILE)
 
-			if POSTS:
-				get_content("posts", "/users/" + PROFILE_ID + "/posts")
-			if ARCHIVED:
-				get_content("archived", "/users/" + PROFILE_ID + "/posts/archived")
-			if STORIES:
-				get_content("stories", "/users/" + PROFILE_ID + "/stories")
-			if MESSAGES:
-				get_content("messages", "/chats/" + PROFILE_ID + "/messages")
-			if PURCHASED:
-				get_content("purchased", "/posts/paid")
+		if "id" in user_info:
+			PROFILE_ID = str(user_info["id"])
+		else:
+			continue
+
+		if LATEST:
+			latestDate = latest(PROFILE)
+			if latestDate != "0":
+				MAX_AGE = int(datetime.strptime(x + ' 00:00:00', '%Y-%m-%d %H:%M:%S').timestamp())
+				print("\nGetting posts newer than " + latestDate + " 00:00:00 UTC")
+
+		if os.path.isdir(PROFILE):
+			print("\n" + PROFILE + " exists.\nDownloading new media, skipping pre-existing.")
+		else:
+			print("\nDownloading content to " + PROFILE)
+
+		if POSTS:
+			get_content("posts", "/users/" + PROFILE_ID + "/posts")
+		if ARCHIVED:
+			get_content("archived", "/users/" + PROFILE_ID + "/posts/archived")
+		if STORIES:
+			get_content("stories", "/users/" + PROFILE_ID + "/stories")
+		if MESSAGES:
+			get_content("messages", "/chats/" + PROFILE_ID + "/messages")
+		if PURCHASED:
+			get_content("purchased", "/posts/paid")
 
