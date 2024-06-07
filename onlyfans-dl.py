@@ -79,7 +79,8 @@ def create_signed_headers(link, queryParams):
 	sha_1_sign = hash_object.hexdigest()
 	sha_1_b = sha_1_sign.encode("ascii")
 	checksum = sum([sha_1_b[number] for number in dynamic_rules["checksum_indexes"]])+dynamic_rules["checksum_constant"]
-	API_HEADER["sign"] = dynamic_rules["format"].format(sha_1_sign, abs(checksum))
+	format = dynamic_rules["prefix"] + ":{}:{:x}:" + dynamic_rules["suffix"]
+	API_HEADER["sign"] = format.format(sha_1_sign, abs(checksum))
 	API_HEADER["time"] = unixtime
 	return
 
@@ -271,7 +272,7 @@ if __name__ == "__main__":
 		except: print('Unable to use DIR: ' + DL_DIR)
 	print("CWD = " + os.getcwd())
 	#Get the rules for the signed headers dynamically, so we don't have to update the script every time they change
-	dynamic_rules = requests.get('https://raw.githubusercontent.com/DATAHOARDERS/dynamic-rules/main/onlyfans.json').json()
+	dynamic_rules = requests.get('https://raw.githubusercontent.com/Growik/onlyfans-dynamic-rules/main/rules.json').json()
 	PROFILE_LIST = sys.argv
 	PROFILE_LIST.pop(0)
 	if PROFILE_LIST[-1] == "0":
