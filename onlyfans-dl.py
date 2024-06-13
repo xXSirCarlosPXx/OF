@@ -271,8 +271,8 @@ if __name__ == "__main__":
 		try: os.chdir(DL_DIR)
 		except: print('Unable to use DIR: ' + DL_DIR)
 	print("CWD = " + os.getcwd())
-	#Get the rules for the signed headers dynamically, so we don't have to update the script every time they change
-	dynamic_rules = requests.get('https://raw.githubusercontent.com/Growik/onlyfans-dynamic-rules/main/rules.json').json()
+	#rules for the signed headers
+	dynamic_rules = {"static_param":"RPnq8UadKceN7JNbeh2ApmUxM0A2nU9y","start":"24650","end":"666078a0","checksum_constant":13,"checksum_indexes":[4,5,7,9,9,11,13,17,18,19,23,23,23,24,25,26,27,27,28,28,28,28,28,29,30,32,32,33,33,34,34,38],"app_token":"33d57ade8c02dbc5a333db99ff9ae26a","remove_headers":["user_id"],"revision":"202404181902-08205f45c3","is_current":0,"format":"24650:{}:{:x}:666078a0","prefix":"24650","suffix":"666078a0"}
 	PROFILE_LIST = sys.argv
 	PROFILE_LIST.pop(0)
 	if PROFILE_LIST[-1] == "0":
