@@ -175,12 +175,15 @@ def download_media(media, subtype, postdate, album = ''):
 	if subtype == "stories":
 		source = media["files"]["source"]["url"]
 	else:
-		source = media["source"]["source"]
-		if not source:
-			if "preview" in media["files"]:
-				source = media["files"]["preview"]["url"]
+		if "source" in media:
+			source = media["source"]["source"]
+		elif "files" in media:
+			if "full" in media["files"]:
+				source = media["files"]["full"]["url"]
 			elif "preview" in media:
 				source = media["preview"]
+		else:
+			return
 
 	if (media["type"] != "photo" and media["type"] != "video" and media["type"] != "audio" and media["type"] != "gif") or not media['canView']:
 		return
