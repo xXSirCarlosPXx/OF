@@ -172,20 +172,18 @@ def get_subscriptions():
 
 def download_media(media, subtype, postdate, album = ''):
 	filename = postdate + "_" + str(media["id"])
-	if subtype == "stories":
-		source = media["files"]["source"]["url"]
-	else:
-		if "source" in media:
-			source = media["source"]["source"]
-		elif "files" in media:
-			if "full" in media["files"]:
-				source = media["files"]["full"]["url"]
-			elif "preview" in media:
-				source = media["preview"]
-			else:
-				return
+
+	if "source" in media:
+		source = media["source"]["source"]
+	elif "files" in media:
+		if "full" in media["files"]:
+			source = media["files"]["full"]["url"]
+		elif "preview" in media:
+			source = media["preview"]
 		else:
 			return
+	else:
+		return
 
 	if (media["type"] != "photo" and media["type"] != "video" and media["type"] != "audio" and media["type"] != "gif") or not media['canView']:
 		return
