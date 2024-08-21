@@ -182,6 +182,8 @@ def download_media(media, subtype, postdate, album = ''):
 				source = media["files"]["full"]["url"]
 			elif "preview" in media:
 				source = media["preview"]
+			else:
+				return
 		else:
 			return
 
