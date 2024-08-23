@@ -189,9 +189,13 @@ def download_media(media, subtype, postdate, album = ''):
 		return
 	if (media["type"] == "photo" and not PHOTOS) or (media["type"] == "video" and not VIDEOS) or (media["type"] == "audio" and not AUDIO):
 		return
+	
+	if source is not None:
+		extension = source.split('?')[0].split('.')[-1]
+		ext = '.' + extension
+	else:
+		return
 
-	extension = source.split('?')[0].split('.')
-	ext = '.' + extension[len(extension)-1]
 	if len(ext) < 3:
 		return
 
@@ -253,7 +257,10 @@ def get_content(MEDIATYPE, API_LOCATION):
 				album = ""
 			for media in post["media"]:
 				if MEDIATYPE == "stories":
-					postdate = str(media["createdAt"][:10])
+					if media["createdAt"] is None:
+						postdate = str(media["id"])
+					else:
+						postdate = str(media["createdAt"][:10])
 				if "source" in media and "source" in media["source"] and media["source"]["source"] and ("canView" not in media or media["canView"]) or "files" in media:
 					download_media(media, MEDIATYPE, postdate, album)
 		global new_files
@@ -321,4 +328,3 @@ if __name__ == "__main__":
 			get_content("messages", "/chats/" + PROFILE_ID + "/messages")
 		if PURCHASED:
 			get_content("purchased", "/posts/paid")
-
