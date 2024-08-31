@@ -66,6 +66,7 @@ API_HEADER = {
 }
 
 
+
 def create_signed_headers(link, queryParams):
 	global API_HEADER
 	path = "/api2/v2" + link
@@ -85,6 +86,7 @@ def create_signed_headers(link, queryParams):
 	return
 
 
+
 def showAge(myStr):
 	myStr = str(myStr)
 	tmp = myStr.split('.')
@@ -94,6 +96,7 @@ def showAge(myStr):
 	return(strOut)
 
 
+
 def latest(profile):
 	latest = "0";
 	for dirpath, dirs, files in os.walk(profile):
@@ -101,6 +104,7 @@ def latest(profile):
 			if f.startswith('20'):
 				latest = f if f > latest else latest
 	return latest[:10]
+
 
 
 def api_request(endpoint, apiType):
@@ -154,12 +158,14 @@ def api_request(endpoint, apiType):
 	return list_base
 
 
+
 def get_user_info(profile):
 	# <profile> = "me" -> info about yourself
 	info = api_request("/users/" + profile, 'user-info')
 	if "error" in info:
 		print("\nFailed to get user: " + profile + "\n" + info["error"]["message"] + "\n")
 	return info
+
 
 
 def get_subscriptions():
@@ -170,6 +176,7 @@ def get_subscriptions():
 	return [row['username'] for row in subs]
 
 
+
 def download_media(media, subtype, postdate, album = ''):
 	filename = postdate + "_" + str(media["id"])
 
@@ -177,7 +184,10 @@ def download_media(media, subtype, postdate, album = ''):
 		source = media["source"]["source"]
 	elif "files" in media:
 		if "full" in media["files"]:
-			source = media["files"]["full"]["url"]
+			if media["files"]["full"]["url"] is not None:
+				source = media["files"]["full"]["url"]
+			else:
+				source = media["files"]["preview"]["url"]
 		elif "preview" in media:
 			source = media["preview"]
 		else:
@@ -185,17 +195,16 @@ def download_media(media, subtype, postdate, album = ''):
 	else:
 		return
 
+	if source is None:
+		return
+
 	if (media["type"] != "photo" and media["type"] != "video" and media["type"] != "audio" and media["type"] != "gif") or not media['canView']:
 		return
 	if (media["type"] == "photo" and not PHOTOS) or (media["type"] == "video" and not VIDEOS) or (media["type"] == "audio" and not AUDIO):
 		return
-	
-	if source is not None:
-		extension = source.split('?')[0].split('.')[-1]
-		ext = '.' + extension
-	else:
-		return
 
+	extension = source.split('?')[0].split('.')[-1]
+	ext = '.' + extension
 	if len(ext) < 3:
 		return
 
@@ -232,6 +241,7 @@ def download_media(media, subtype, postdate, album = ''):
 		if VERBOSITY >= 4: print(path + ' ... already exists')
 
 
+
 def get_content(MEDIATYPE, API_LOCATION):
 	posts = api_request(API_LOCATION, MEDIATYPE)
 	if "error" in posts:
@@ -261,11 +271,12 @@ def get_content(MEDIATYPE, API_LOCATION):
 						postdate = str(media["id"])
 					else:
 						postdate = str(media["createdAt"][:10])
-				if "source" in media and "source" in media["source"] and media["source"]["source"] and ("canView" not in media or media["canView"]) or "files" in media:
+				if ("source" in media and "source" in media["source"] and media["source"]["source"] and ("canView" not in media or media["canView"])) or ("files" in media and "canView" in media and media["canView"]):
 					download_media(media, MEDIATYPE, postdate, album)
 		global new_files
 		print("Downloaded " + str(new_files) + " new " + MEDIATYPE)
 		new_files = 0
+
 
 
 if __name__ == "__main__":
@@ -328,3 +339,4 @@ if __name__ == "__main__":
 			get_content("messages", "/chats/" + PROFILE_ID + "/messages")
 		if PURCHASED:
 			get_content("purchased", "/posts/paid")
+
